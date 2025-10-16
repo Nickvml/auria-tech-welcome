@@ -46,8 +46,47 @@ async def on_control_recibido(msg: ControlVehiculo):
     """
     state.aceleracion_actual = msg.aceleracion
     state.giro_actual = msg.giro
-# (Aquí añadiremos las funciones de @subscribe y @timer en los siguientes pasos)
+# Constantes de la simulación
+DT = 1 / 60  # Delta de tiempo: simulamos a 60 "frames" por segundo.
+# Esta función se ejecutará 60 veces por segundo. Es el motor de nuestra simulación.
+@timer(DT)
+async def bucle_principal():
+    """
+    Realiza un paso de la simulación física y publica el estado del mundo.
+    """
+    # 1. Actualizar el ángulo del vehículo
+    # El giro afecta más a velocidades altas. La velocidad angular es giro * velocidad.
+    cambio_de_angulo = state.giro_actual * DT
+    state.angulo += cambio_de_angulo
 
+    # 2. Actualizar la velocidad
+    # Usamos una fórmula de movimiento simple: v_final = v_inicial + a * t
+    state.velocidad += state.aceleracion_actual * DT
+    # Ponemos un límite para que no vaya marcha atrás a más de cierta velocidad
+    state.velocidad = max(-5.0, state.velocidad) 
+
+    # 3. Actualizar la posición (X, Y)
+    # Usamos trigonometría básica para mover el coche en la dirección de su ángulo.
+    # distancia = velocidad * tiempo
+    distancia_recorrida = state.velocidad * DT
+    state.pos_x += math.cos(state.angulo) * distancia_recorrida
+    state.pos_y += math.sin(state.angulo) * distancia_recorrida
+
+    # 4. Crear los mensajes con el estado actualizado del mundo
+    mensaje_estado_vehiculo = EstadoVehiculo(
+        pos_x=state.pos_x,
+        pos_y=state.pos_y,
+        angulo=state.angulo,
+        velocidad=state.velocidad,
+    )
+    
+    # La posición de los conos no cambia, pero la publicamos periódicamente
+    # por si un nuevo programa (como el visualizador) se conecta a mitad de la simulación.
+    mensaje_posicion_conos = state.posicion_conos
+
+    # 5. Publicar los mensajes en sus topics
+    await publish("estado.vehiculo", mensaje_estado_vehiculo)
+    await publish("mundo.conos", mensaje_posicion_conos)
 
 # --- Arranque del Programa ---
 # Esta es la parte estándar para iniciar el programa.

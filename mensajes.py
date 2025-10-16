@@ -18,5 +18,5 @@ class EstadoVehiculo(Struct):
 
 # Usamos una tupla de dos floats para representar las coordenadas (x, y) de un cono.
 # El mensaje contendrá una lista de todas estas tuplas.
-class PosicionConos(Struct):
+class PosicionConos(Struct, frozen=True):
     conos: List[Tuple[float, float]]
