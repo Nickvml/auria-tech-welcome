@@ -43,7 +43,15 @@ async def subscriber_callback(msg : TipoMensaje):
 async def timer_callback():
 	state.variable1 += 1
 	print(f"la variable de estado es {state.variable1}")
-
+	
+	"""
+	Pruebas 
+	# Creamos un mensaje de prueba
+	mensaje_de_prueba = TipoMensaje(dato1=1, dato2=2.2, dato3="hola", dato4=[1, 2, 3])
+	# Y lo publicamos en el topic que el suscriptor está escuchando
+	await publish("topic", mensaje_de_prueba)
+	"""
+	
 # IMPORTANTE: todas las funciones que tengan decoradores (@subscribe y @timer) deben ser async
 # y cuando publiqueis mensajes con publish teneis que hacer await publish
 # NO teneis que preocuparos de nada más con respecto a cosas asíncronas que esas dos cosas
