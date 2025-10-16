@@ -9,9 +9,9 @@ from starting_pack import subscribe, timer, publish, start
 # Esta clase guardará toda la información de nuestro mundo.
 class SimuladorState(Struct):
     # Estado del vehículo
-    pos_x: float = 0.0
-    pos_y: float = 0.0
-    angulo: float = 0.0  # Apuntando a la derecha (eje X positivo)
+    pos_x: float = 20.0  # Nueva posición X en la línea de salida
+    pos_y: float = 15.0  # Nueva posición Y en la línea de salida
+    angulo: float = 0.0   # El ángulo 0 ya apunta en la dirección correcta
     velocidad: float = 0.0
 
     # Últimos controles recibidos del conductor autónomorom mensajes import ControlVehiculo, EstadoVehiculo, PosicionConos, ComandoSimulador

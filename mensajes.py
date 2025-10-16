@@ -27,3 +27,6 @@ class PosicionConos(Struct, frozen=True):
 # Gracias a esto podemos restablecer el ángulo en el caso de perder mucho "el norte :)"
 class ComandoSimulador(Struct, frozen=True):
     comando: str  # e.g., "reset_posicion"
+
+class RutaConduccion(Struct, frozen=True):
+    waypoints: List[Tuple[float, float]]
