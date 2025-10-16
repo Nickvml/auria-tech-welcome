@@ -5,6 +5,15 @@ from msgspec import Struct
 from mensajes import EstadoVehiculo, PosicionConos, ControlVehiculo, RutaConduccion
 from starting_pack import subscribe, timer, publish, start
 
+# --- CONSTANTES DE CONDUCCIÓN ---
+# ¡Puedes jugar con estos valores para cambiar cómo conduce el coche!
+GANANCIA_GIRO = 3.5              # Cuán agresivamente gira el volante.
+ACELERACION_BASE = 1.2           # La aceleración máxima en rectas.
+FACTOR_FRENADO = 0.7             # Cuánto frena en las curvas.
+VELOCIDAD_MINIMA = 0.4           # Para que nunca se detenga por completo.
+DISTANCIA_CAMBIO_WAYPOINT = 5.0  # A qué distancia considera un waypoint "alcanzado".
+BIAS_EXTERIOR = 0.6              # Cuánto se abre en las curvas (0.5 es el centro).
+
 # --- Funciones de Geometría (sin cambios) ---
 def distancia_entre_puntos(p1, p2):
     return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
@@ -56,25 +65,20 @@ async def bucle_conduccion():
         await publish("controles.vehiculo", ControlVehiculo(aceleracion=0.0, giro=0.0))
         return
 
-    # 1. Nuestro punto objetivo es el waypoint actual de nuestra memoria.
     punto_objetivo = state.ruta[state.idx_waypoint_actual]
     pos_coche = (state.pos_x, state.pos_y)
 
-    # 2. Comprobar si hemos llegado a nuestro objetivo.
     distancia_al_objetivo = distancia_entre_puntos(pos_coche, punto_objetivo)
-    # Si estamos lo suficientemente cerca...
-    if distancia_al_objetivo < 5.0: # Umbral de 5 metros
+    if distancia_al_objetivo < DISTANCIA_CAMBIO_WAYPOINT:
         print(f"Waypoint {state.idx_waypoint_actual} alcanzado! Siguiente...")
-        # ...actualizamos nuestro objetivo al siguiente waypoint de la lista.
         state.idx_waypoint_actual = (state.idx_waypoint_actual + 1) % len(state.ruta)
 
-    # 3. El resto de la lógica de control es la misma que antes.
     error_de_angulo = angulo_hacia_punto(pos_coche, state.angulo, punto_objetivo)
-    giro_calculado = error_de_angulo * 3.5
+    giro_calculado = error_de_angulo * GANANCIA_GIRO
 
-    factor_frenado = abs(error_de_angulo) * 0.7
-    aceleracion_calculada = 1.2 - factor_frenado
-    aceleracion_calculada = max(0.4, aceleracion_calculada)
+    frenado_por_curva = abs(error_de_angulo) * FACTOR_FRENADO
+    aceleracion_calculada = ACELERACION_BASE - frenado_por_curva
+    aceleracion_calculada = max(VELOCIDAD_MINIMA, aceleracion_calculada)
 
     control = ControlVehiculo(aceleracion=aceleracion_calculada, giro=giro_calculado)
     await publish("controles.vehiculo", control)

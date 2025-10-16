@@ -5,12 +5,9 @@ from mensajes import ControlVehiculo, ComandoSimulador
 from starting_pack import publish, start, timer
 
 # --- Estado del Conductor ---
-# Guardaremos aquí el estado actual de los controles.
 controles = ControlVehiculo(aceleracion=0.0, giro=0.0)
 reset_solicitado = False
 # --- Bucle de Publicación con @timer ---
-# Esta es la forma correcta: el @timer se asegura de que esto
-# solo empiece a ejecutarse DESPUÉS de que start() haya conectado.
 @timer(1/30)
 async def bucle_principal_conductor():
     """Bucle principal que publica controles y gestiona comandos."""
