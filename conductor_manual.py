@@ -1,37 +1,51 @@
 import asyncio
 from pynput import keyboard
 
-from mensajes import ControlVehiculo
-# ¡Importamos timer y start!
+from mensajes import ControlVehiculo, ComandoSimulador
 from starting_pack import publish, start, timer
 
 # --- Estado del Conductor ---
 # Guardaremos aquí el estado actual de los controles.
 controles = ControlVehiculo(aceleracion=0.0, giro=0.0)
-
+reset_solicitado = False
 # --- Bucle de Publicación con @timer ---
 # Esta es la forma correcta: el @timer se asegura de que esto
 # solo empiece a ejecutarse DESPUÉS de que start() haya conectado.
 @timer(1/30)
-async def publicar_controles_timer():
-    """Publica el estado actual de los controles 30 veces por segundo."""
+async def bucle_principal_conductor():
+    """Bucle principal que publica controles y gestiona comandos."""
+    global reset_solicitado
+    # Publicamos el estado normal de los controles.
     await publish("controles.vehiculo", controles)
 
+    # Si el hilo del teclado ha solicitado un reseteo...
+    if reset_solicitado:
+        print("Enviando comando de reseteo...")
+        await publish("simulador.comando", ComandoSimulador(comando="reset_posicion"))
+        reset_solicitado = False # Apagamos la bandera para no enviarlo más veces.
+        
 # --- Lógica de Pulsación de Teclas (sin cambios) ---
 def on_press(key):
     """Se activa cuando se presiona una tecla."""
+    global reset_solicitado
     try:
-        if key == keyboard.Key.up:
-            controles.aceleracion = 2.5
-        elif key == keyboard.Key.down:
-            controles.aceleracion = -2.0
-        elif key == keyboard.Key.left:
-            controles.giro = -1.5  # Aumentamos la velocidad de giro
-        elif key == keyboard.Key.right:
-            controles.giro = 1.5   # Aumentamos la velocidad de giro
+        # Primero comprobamos si es una tecla de caracter, como 'r'
+        if key.char == 'r':
+            reset_solicitado = True
     except AttributeError:
-        pass
-
+        # Si da error, es una tecla especial (como las flechas)
+        try:
+            if key == keyboard.Key.up:
+                controles.aceleracion = 2.5
+            elif key == keyboard.Key.down:
+                controles.aceleracion = -2.0
+            elif key == keyboard.Key.left:
+                controles.giro = -1.5
+            elif key == keyboard.Key.right:
+                controles.giro = 1.5
+        except AttributeError:
+            pass
+        
 def on_release(key):
     """Se activa cuando se suelta una tecla."""
     try:

@@ -20,3 +20,9 @@ class EstadoVehiculo(Struct):
 # El mensaje contendrá una lista de todas estas tuplas.
 class PosicionConos(Struct, frozen=True):
     conos: List[Tuple[float, float]]
+
+# --- Mensajes de Comando ---
+# Para enviar órdenes especiales al simulador
+# Gracias a esto podemos restablecer el ángulo en el caso de perder mucho "el norte :)"
+class ComandoSimulador(Struct, frozen=True):
+    comando: str  # e.g., "reset_posicion"
