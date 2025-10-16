@@ -22,13 +22,17 @@ class SimuladorState(Struct):
     # El circuito: una lista de coordenadas (x, y) de los conos
     # Vamos a crear un circuito simple con forma de rectángulo.
     # Puedes cambiar estos valores para crear tu propio circuito!
+    # Cámbialo por ESTO:
     posicion_conos: PosicionConos = PosicionConos(
-        conos=[
-            (10, 5), (30, 5),   # Lado inferior
-            (10, 15), (30, 15), # Lado superior
-        ]
-    )
-
+    # Borde interior de la pista
+    conos_interiores=[
+        (20, 20), (50, 20), (70, 30), (70, 50), (50, 60), (20, 60), (10, 50), (10, 30),
+    ],
+    # Borde exterior de la pista
+    conos_exteriores=[
+        (20, 10), (50, 10), (80, 30), (80, 50), (50, 70), (20, 70), (0, 50), (0, 30),
+    ]
+)
 # Creamos una instancia única de nuestro estado que usaremos en todo el programa.
 state = SimuladorState()
 
@@ -65,24 +69,21 @@ async def on_comando_recibido(msg: ComandoSimulador):
 # Constantes de la simulación
 DT = 1 / 60  # Delta de tiempo: simulamos a 60 "frames" por segundo.
 # Esta función se ejecutará 60 veces por segundo. Es el motor de nuestra simulación.
+
 @timer(DT)
 async def bucle_principal():
     """
     Realiza un paso de la simulación física y publica el estado del mundo.
     """
     # 1. Actualizar el ángulo del vehículo
-    # El giro afecta más a velocidades altas. La velocidad angular es giro * velocidad.
-    cambio_de_angulo = state.giro_actual * state.velocidad * DT
+    cambio_de_angulo = state.giro_actual * DT
     state.angulo += cambio_de_angulo
 
     # 2. Actualizar la velocidad
-    # Usamos una fórmula de movimiento simple: v_final = v_inicial + a * t
     state.velocidad += state.aceleracion_actual * DT
-    # Ponemos un límite para que no vaya marcha atrás a más de cierta velocidad
-    state.velocidad = max(-5.0, min(state.velocidad, 15.0))
+    state.velocidad = max(-5.0, min(state.velocidad, 15.0)) 
+
     # 3. Actualizar la posición (X, Y)
-    # Usamos trigonometría básica para mover el coche en la dirección de su ángulo.
-    # distancia = velocidad * tiempo
     distancia_recorrida = state.velocidad * DT
     state.pos_x += math.cos(state.angulo) * distancia_recorrida
     state.pos_y += math.sin(state.angulo) * distancia_recorrida
@@ -95,9 +96,12 @@ async def bucle_principal():
         velocidad=state.velocidad,
     )
     
-    # La posición de los conos no cambia, pero la publicamos periódicamente
-    # por si un nuevo programa (como el visualizador) se conecta a mitad de la simulación.
-    mensaje_posicion_conos = state.posicion_conos
+    # ***** ESTA ES LA PARTE QUE CAMBIAMOS *****
+    # Ahora creamos el mensaje usando la nueva estructura con dos listas de conos.
+    mensaje_posicion_conos = PosicionConos(
+        conos_interiores=state.posicion_conos.conos_interiores,
+        conos_exteriores=state.posicion_conos.conos_exteriores
+    )
 
     # 5. Publicar los mensajes en sus topics
     await publish("estado.vehiculo", mensaje_estado_vehiculo)

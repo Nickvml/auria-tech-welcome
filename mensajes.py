@@ -19,7 +19,8 @@ class EstadoVehiculo(Struct):
 # Usamos una tupla de dos floats para representar las coordenadas (x, y) de un cono.
 # El mensaje contendrá una lista de todas estas tuplas.
 class PosicionConos(Struct, frozen=True):
-    conos: List[Tuple[float, float]]
+    conos_interiores: List[Tuple[float, float]]
+    conos_exteriores: List[Tuple[float, float]]
 
 # --- Mensajes de Comando ---
 # Para enviar órdenes especiales al simulador
